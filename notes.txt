@@ -1,0 +1,6 @@
+Blueprint: it is used to divide an api into multiple segments
+MethodView: MethodView is a class within the flask.views module of the Flask project. MethodView is a Python Metaclass that determines the methods, such as GET, POST, PUT, etc, that a view defines.
+
+we make marshmallow schema so that we don't have to use if statements to check if we get the proper variables in json file
+so we make schemas.py for us.
+load_only is true means the the field is used for returning the data since we generate the field(id) by ourself
