@@ -20,7 +20,7 @@ def send_simple_message(to, subject, body):
     domain = os.getenv("MAILGUN_DOMAIN")
     return requests.post(
         f"https://api.mailgun.net/v3/{domain}/messages",
-        auth=("api", str(os.getenv("MAILGUN_API_KEY"))),
+        auth=("api", os.getenv("MAILGUN_API_KEY")),
         data={"from": f"<mailgun@{domain}>",
               "to": [to],
               "subject": subject,
