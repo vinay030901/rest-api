@@ -5,8 +5,10 @@ from passlib.hash import pbkdf2_sha256
 from flask_jwt_extended import create_access_token, get_jwt, jwt_required, create_refresh_token, get_jwt_identity
 from blocklist import BLOCKLIST
 from sqlalchemy import or_
+from flask import current_app
 import requests
 import os
+# from task import send_user_registration_email
 from db import db
 from models import UserModel
 from schemas import UserSchema, UserRegisterSchema
@@ -20,11 +22,14 @@ def send_simple_message(to, subject, body):
     domain = os.getenv("MAILGUN_DOMAIN")
     return requests.post(
         f"https://api.mailgun.net/v3/{domain}/messages",
-        auth=("api", os.getenv("MAILGUN_API_KEY")),
-        data={"from": f"<mailgun@{domain}>",
-              "to": [to],
-              "subject": subject,
-              "text": body})
+        auth=("api", str(os.getenv("MAILGUN_API_KEY"))),
+        data={
+            "from": f"Vinay Kumar <postmaster@{domain}>",
+            "to": [to],
+            "subject": subject,
+            "text": body,
+        }
+    )
 
 
 # here we are registering the user
@@ -46,11 +51,10 @@ class UserRegister(MethodView):
 
         db.session.add(user)
         db.session.commit()
-
         send_simple_message(
             to=user.email,
-            subject="Successfully registered",
-            body=f"Hi {user.username}, Your have successfully registered for the store API. "
+            subject="Successfully signed up",
+            body=f"Hi {user.username}! You have successfully signed up to the Stores REST API."
         )
         return {"message": "User registered successfully"}, 201
 
