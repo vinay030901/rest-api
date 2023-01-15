@@ -4,6 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from passlib.hash import pbkdf2_sha256
 from flask_jwt_extended import create_access_token, get_jwt, jwt_required, create_refresh_token, get_jwt_identity
 from blocklist import BLOCKLIST
+from sqlalchemy import or_
 import requests
 import os
 from db import db
@@ -19,8 +20,8 @@ def send_simple_message(to, subject, body):
     domain = os.getenv("MAILGUN_DOMAIN")
     return requests.post(
         f"https://api.mailgun.net/v3/{domain}/messages",
-        auth=("api", str(os.getenv("MAILGUN_API_KEY"))),
-        data={"from": f"Excited User <mailgun@{domain}>",
+        auth=("api", os.getenv("MAILGUN_API_KEY")),
+        data={"from": f"Vinay Kumar <mailgun@{domain}>",
               "to": [to],
               "subject": subject,
               "text": body})
@@ -32,7 +33,9 @@ class UserRegister(MethodView):
     @blp.arguments(UserRegisterSchema)
     def post(self, user_data):
         # checking if the user is already registered
-        if UserModel.query.filter(UserModel.username == user_data["username"] or UserModel.email == user_data["email"]).first():
+        if UserModel.query.filter(
+            or_(UserModel.username == user_data["username"],
+                UserModel.email == user_data["email"])).first():
             abort(409, message="A user with this username or email already exists")
         user = UserModel(
             username=user_data["username"],
