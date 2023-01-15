@@ -4,32 +4,51 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from passlib.hash import pbkdf2_sha256
 from flask_jwt_extended import create_access_token, get_jwt, jwt_required, create_refresh_token, get_jwt_identity
 from blocklist import BLOCKLIST
-
+import requests
+import os
 from db import db
 from models import UserModel
-from schemas import UserSchema
+from schemas import UserSchema, UserRegisterSchema
 
 
 # blueprint is used to divide the api into multiple segments, here we have item, store and tags
 blp = Blueprint("Users", "users", description="Operations on users")
 
 
+def send_simple_message(to, subject, body):
+    domain = os.getenv("MAILGUN_DOMAIN")
+    return requests.post(
+        f"https://api.mailgun.net/v3/{domain}/messages",
+        auth=("api", str(os.getenv("MAILGUN_API_KEY"))),
+        data={"from": f"Excited User <mailgun@{domain}>",
+              "to": [to],
+              "subject": subject,
+              "text": body})
+
+
 # here we are registering the user
 @blp.route("/register")
 class UserRegister(MethodView):
-    @blp.arguments(UserSchema)
+    @blp.arguments(UserRegisterSchema)
     def post(self, user_data):
         # checking if the user is already registered
-        if UserModel.query.filter(UserModel.username == user_data["username"]).first():
-            abort(409, message="A user with this username already exists")
+        if UserModel.query.filter(UserModel.username == user_data["username"] or UserModel.email == user_data["email"]).first():
+            abort(409, message="A user with this username or email already exists")
         user = UserModel(
             username=user_data["username"],
+            email=user_data["email"],
             password=pbkdf2_sha256.hash(
                 user_data["password"])  # hashing the password
         )
 
         db.session.add(user)
         db.session.commit()
+
+        send_simple_message(
+            to=user.email,
+            subject="Successfully registered",
+            body=f"Hi {user.username}, Your have successfully registered for the store API. "
+        )
         return {"message": "User registered successfully"}, 201
 
 

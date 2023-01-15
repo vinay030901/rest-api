@@ -7,3 +7,4 @@ python-dotenv
 gunicorn
 flask-migrate
 psycopg2
+requests
